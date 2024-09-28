@@ -104,7 +104,7 @@ python src/main.py
 
 ### Video de Demostración
 
-![Video de Demostración](Demo.mp4)
+Encuentre el video en la ruta `resources/Demo.mp4`
 
 Este video muestra cómo se utiliza el software desarrollado para caracterizar señales RF, desde la carga de un archivo CSV hasta la visualización y exportación de los resultados. **Haz clic en la imagen para ver el video.**
 
