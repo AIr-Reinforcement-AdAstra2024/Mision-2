@@ -135,9 +135,8 @@ def generate_report(df, selected_content, comments):
 
     # Obtener el directorio raíz (un nivel por encima de 'src/')
     current_dir = os.getcwd()
-    root_dir = os.path.dirname(current_dir)
     # Ruta al directorio 'reports' en el nivel raíz
-    reports_dir = os.path.join(root_dir, 'reports')
+    reports_dir = os.path.join(current_dir, 'reports')
     os.makedirs(reports_dir, exist_ok=True)
 
     # Generar un nombre único para el archivo

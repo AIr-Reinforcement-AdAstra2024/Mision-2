@@ -26,10 +26,8 @@ server = app.server
 def download_report(filename):
     # Obtener el directorio actual (src/)
     current_dir = os.getcwd()
-    # Subir un nivel para apuntar al directorio raíz
-    root_dir = os.path.dirname(current_dir)
     # Construir la ruta al directorio 'reports' en el nivel raíz
-    reports_dir = os.path.join(root_dir, 'reports')
+    reports_dir = os.path.join(current_dir, 'reports')
     # Opcional: imprimir para depuración
     print(f"Attempting to send file from directory: {reports_dir}")
     print(f"Filename requested: {filename}")
