@@ -1,6 +1,5 @@
 # Proyecto: Caracterización de Señales de Radiofrecuencia - Reto Codefest Ad Astra 2024
 
-
 ## Tabla de Contenidos
 
 - [Proyecto: Caracterización de Señales de Radiofrecuencia - Reto Codefest Ad Astra 2024](#proyecto-caracterización-de-señales-de-radiofrecuencia---reto-codefest-ad-astra-2024)
@@ -42,6 +41,7 @@ El software está diseñado para recibir como entrada archivos CSV generados por
 ## Requerimientos del Sistema
 
 ### Software
+
 - **Python 3.x** o superior
 - **Bibliotecas necesarias**:
   - `pandas`
@@ -49,7 +49,7 @@ El software está diseñado para recibir como entrada archivos CSV generados por
   - `plotly`
   - `dash`
   - `numpy`
-  
+
 Para instalar las dependencias, utiliza el siguiente comando:
 
 ```bash
@@ -57,12 +57,14 @@ pip install -r requirements.txt
 ```
 
 ### Hardware
+
 - Ordenador con soporte para Python 3.x.
 - Analizador de espectro (opcional para pruebas en tiempo real).
 
 ## Instrucciones de Instalación
 
 ### 1. Clonar el Repositorio
+
 Clona el repositorio en tu máquina local con el siguiente comando:
 
 ```bash
@@ -70,6 +72,7 @@ git clone https://github.com/tu_usuario/tu_repositorio.git
 ```
 
 ### 2. Navegar al Directorio del Proyecto
+
 Dirígete al directorio del proyecto:
 
 ```bash
@@ -77,6 +80,7 @@ cd tu_repositorio
 ```
 
 ### 3. Instalar Dependencias
+
 Instala las dependencias necesarias:
 
 ```bash
@@ -84,6 +88,7 @@ pip install -r requirements.txt
 ```
 
 ### 4. Ejecutar el Software
+
 Ejecuta la aplicación con el siguiente comando:
 
 ```bash
@@ -99,7 +104,7 @@ python app.py
 
 ### Video de Demostración
 
-[![Video de Demostración]()]()
+![Video de Demostración](Demo.mp4)
 
 Este video muestra cómo se utiliza el software desarrollado para caracterizar señales RF, desde la carga de un archivo CSV hasta la visualización y exportación de los resultados. **Haz clic en la imagen para ver el video.**
 
@@ -132,9 +137,11 @@ El proyecto sigue una estructura modular, organizada para facilitar el mantenimi
 ## Pruebas y Ejemplos
 
 ### Archivos de Prueba
+
 El directorio `data/` incluye varios archivos CSV de prueba que puedes usar para verificar el funcionamiento del software.
 
 ### Ejemplo de Ejecución
+
 1. Abre el software y carga uno de los archivos CSV de prueba.
 2. Observa cómo el software detecta automáticamente los parámetros clave de la señal.
 3. Aplica filtros para eliminar interferencias no deseadas.
@@ -149,4 +156,3 @@ Este proyecto fue desarrollado por:
 - **Sebastian Urrea**
 - **Haider Fonseca**
 - **Daniel Perea**
-
