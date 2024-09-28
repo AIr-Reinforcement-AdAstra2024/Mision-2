@@ -1,4 +1,11 @@
-from dash import html, dcc
+# src/interferences/layout.py
+
+from dash import html
 import dash_bootstrap_components as dbc
 
-layout = html.P("Estoy en la página de Interferencias")
+layout = dbc.Container([
+    html.H2("Detección y Filtrado de Interferencias", style={'margin-top': '20px'}),
+    html.Hr(),
+    # Contenedor para el contenido dinámico
+    html.Div(id='interference-content'),
+])

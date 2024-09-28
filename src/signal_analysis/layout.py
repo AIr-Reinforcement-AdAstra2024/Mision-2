@@ -4,8 +4,8 @@ from dash import html
 import dash_bootstrap_components as dbc
 
 layout = dbc.Container([
-    html.H2("Análisis de Señal"),
+    html.H2("Análisis de Señal", style={'margin-top': '20px'}),
     html.Hr(),
-    # Contenido que se actualizará dinámicamente
+    # Contenedor para el contenido dinámico
     html.Div(id='signal-analysis-content'),
 ])

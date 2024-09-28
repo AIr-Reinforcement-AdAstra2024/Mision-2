@@ -1,6 +1,8 @@
 # src/home/logic.py
 
 import pandas as pd
+import io
+import base64
 
 def read_csv_content(contents, filename):
     """
@@ -16,13 +18,14 @@ def read_csv_content(contents, filename):
     - df: pandas.DataFrame
         DataFrame con los datos del archivo CSV.
     """
-    # Por el momento, devolver un DataFrame de prueba
-    data = {
-        'Frequency': [100, 200, 300, 400, 500],
-        'Amplitude': [-50, -45, -55, -60, -58]
-    }
-    df = pd.DataFrame(data)
-    return df
+    content_type, content_string = contents.split(',')
+    decoded = base64.b64decode(content_string)
+    try:
+        # Asumimos que es un archivo CSV
+        df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+        return df
+    except Exception as e:
+        raise ValueError(f"Error al leer el archivo CSV: {str(e)}")
 
     # Código original para leer el CSV (comentado por ahora)
     """
