@@ -68,7 +68,7 @@ pip install -r requirements.txt
 Clona el repositorio en tu máquina local con el siguiente comando:
 
 ```bash
-git clone https://github.com/tu_usuario/tu_repositorio.git
+git clone https://github.com/AIr-Reinforcement-AdAstra2024/Mision-2
 ```
 
 ### 2. Navegar al Directorio del Proyecto
@@ -76,7 +76,7 @@ git clone https://github.com/tu_usuario/tu_repositorio.git
 Dirígete al directorio del proyecto:
 
 ```bash
-cd tu_repositorio
+cd Mision-2
 ```
 
 ### 3. Instalar Dependencias
@@ -92,7 +92,7 @@ pip install -r requirements.txt
 Ejecuta la aplicación con el siguiente comando:
 
 ```bash
-python app.py
+python src/main.py
 ```
 
 ## Uso del Software
@@ -116,29 +116,35 @@ El proyecto sigue una estructura modular, organizada para facilitar el mantenimi
 
 ```
 /
-├── app.py                      # Archivo principal
-├── modules/                    # Módulos del proyecto
-│   └── processing.py           # Procesamiento de los datos de RF
-├── templates/                  # Plantillas para la interfaz gráfica
-├── static/                     # Archivos estáticos como CSS y JavaScript
-├── data/                       # Archivos CSV de prueba
-├── README.md                   # Documentación del proyecto
-├── requirements.txt            # Lista de dependencias
-└── docs/                       # Documentación adicional
+├── LICENSE
+├── README.md
+├── requirements.txt
+├── resources
+│   └── recurso1.csv
+└── src
+    ├── __pycache__
+    ├── about
+    ├── app.py
+    ├── assets
+    ├── home
+    ├── interferences
+    ├── main.py
+    ├── reports
+    ├── signal_analysis
+    └── utils
 ```
 
 ### Componentes Clave
 
-- **app.py**: El archivo principal que contiene la lógica de la aplicación y arranca la interfaz gráfica.
-- **modules/processing.py**: Módulo que contiene las funciones para procesar y analizar los datos de RF.
-- **templates/**: Plantillas HTML/CSS para la interfaz gráfica.
-- **static/**: Archivos estáticos como hojas de estilo o imágenes.
+- **main.py**: El archivo principal que contiene la lógica de la aplicación y arranca la interfaz gráfica.
+- **resources/**: Archivos CSV para probar la aplicación.
+- **src/**: Directorio con las distintas pantallas de la aplicación.
 
 ## Pruebas y Ejemplos
 
 ### Archivos de Prueba
 
-El directorio `data/` incluye varios archivos CSV de prueba que puedes usar para verificar el funcionamiento del software.
+El directorio `resources/` incluye varios archivos CSV de prueba que puedes usar para verificar el funcionamiento del software.
 
 ### Ejemplo de Ejecución
 
