@@ -394,30 +394,27 @@ class SignalAnalytics:
     """
     Crest factor
     """
-    def calculate_crest_factor(fft_signal):
-        """
-        Calculates the crest factor of an FFT-transformed signal.
+    def getCrestFactor(fft_result):
+        """Calculates the crest factor of a radiofrequency signal in the frequency domain.
 
-        Parameters:
-        - fft_signal: array-like, the FFT-transformed signal.
+        Args:
+            fft_result: A NumPy array representing the FFT of the RF signal.
 
         Returns:
-        - crest_factor: float, the crest factor of the signal.
+            The crest factor of the signal.
         """
-        # Compute the magnitude (amplitude) of the FFT signal
-        amplitude = np.abs(fft_signal)
-        
-        # Compute the peak amplitude
-        peak_amplitude = np.max(amplitude)
-        
-        # Compute the RMS (Root Mean Square) amplitude
-        rms_amplitude = np.sqrt(np.mean(amplitude**2))
-        
-        # Compute the crest factor (Peak / RMS)
-        crest_factor = peak_amplitude / rms_amplitude if rms_amplitude != 0 else np.inf
-        
+
+        # Calculate peak amplitude
+        peak_amplitude = np.max(np.abs(fft_result))
+
+        # Calculate RMS amplitude
+        rms_amplitude = np.sqrt(np.mean(np.abs(fft_result)**2))
+
+        # Calculate crest factor
+        crest_factor = peak_amplitude / rms_amplitude
+
         return crest_factor
-    
+            
     """
     PRF
     """
@@ -788,4 +785,5 @@ if __name__ == "__main__":
    signal_analitics.calcular_snr_sin_ruido()
    print("Frecuencias de spurias")  # Hz
    signal_analitics.frecuenciasSpuria()
+   
    
