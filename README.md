@@ -153,6 +153,37 @@ El directorio `resources/` incluye varios archivos CSV de prueba que puedes usar
 3. Aplica filtros para eliminar interferencias no deseadas.
 4. Exporta los resultados en formato PDF para su análisis posterior.
 
+## Overview de Funcionalidades
+
+### Carga de archivos
+
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/0d487d63-8b53-4d8e-8f3a-f0a5c04da3a4">
+
+### Análisis de señales
+
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/d2317863-a3fc-4b22-84c6-a7afdcb51b4a">
+
+### Espectro de la señal y Análisis de espectro temporal
+
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/96c2fcfb-a80b-4f3a-b8c8-bc8954413ad4">
+
+### Transformada inversa de Fourier
+
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/7c4de8f6-8e0e-472a-a563-548c3d52473f">
+
+### Detección de interferencias
+
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/15203359-9fba-4a5e-b0ae-01e26c0e02e0">
+
+### Generación de reportes
+
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/4a7bd81f-646f-4df3-858a-482ccbe0f7ef">
+
+### Acerca de
+
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/2cc35698-5366-46b1-8911-a8acc72a1c67">
+
+
 ## Colaboradores
 
 Este proyecto fue desarrollado por:
