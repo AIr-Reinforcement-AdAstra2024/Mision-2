@@ -3,7 +3,7 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 
-home_layout = dbc.Container([
+layout = dbc.Container([
     # Logos
     dbc.Row(
         [
