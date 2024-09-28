@@ -39,37 +39,27 @@ class SignalAnalytics:
     """
     Main Frecuency
     """
-    def frecuenciaCentral(self, signal, sample_rate):
-        # Perform Fourier transform
-        N = len(signal)
-        yf = fft(signal)
+    def frecuenciaCentral(self):
         
-        # Get frequencies
-        xf = fftfreq(N, 1 / sample_rate)
-
         # Compute the amplitude spectrum (absolute value of the FFT)
-        amplitude = np.abs(yf)
+        amplitude = np.abs(self.linear_mg)
 
         # Find the index of the frequency with the highest amplitude
-        idx_max = np.argmax(amplitude[:N // 2])  # Limit to positive frequencies
+        idx_max = np.argmax(amplitude)  # Limit to positive frequencies
 
         # Get the frequency at the max amplitude
-        dominant_freq = xf[idx_max]
-        
+        dominant_freq = self.frecuency[idx_max]
+        print(dominant_freq)
+
         return dominant_freq
     """
     Ancho banda
     """
-    def anchoDeBanda(self, signal, sample_rate, threshold_db=-3):
-        # Perform Fourier transform
-        N = len(signal)
-        yf = fft(signal)
-
-        # Get frequencies
-        xf = fftfreq(N, 1 / sample_rate)
+    def anchoDeBanda(self, threshold_db=-3):
+    
 
         # Compute the amplitude spectrum (absolute value of the FFT)
-        amplitude = np.abs(yf[:N // 2])  # Limit to positive frequencies
+        amplitude = np.abs(self.linear_mg)  # Limit to positive frequencies
 
         # Power is proportional to the square of the amplitude
         power = amplitude**2
@@ -88,11 +78,12 @@ class SignalAnalytics:
             return None
 
         # Find the lowest and highest frequencies within the threshold
-        freq_low = xf[indices_above_threshold[0]]
-        freq_high = xf[indices_above_threshold[-1]]
+        freq_low = self.frecuency[indices_above_threshold[0]]
+        freq_high = self.frecuency[indices_above_threshold[-1]]
 
         # Bandwidth is the difference between the highest and lowest frequencies
         bandwidth = freq_high - freq_low
+        print(bandwidth)
 
         return bandwidth, freq_low, freq_high
     
@@ -100,7 +91,7 @@ class SignalAnalytics:
     """
     Potencia⑀
     """
-    def potencia(signal, resistance=50):
+    def potencia(self):
         """
         Calculates the power of a signal in milliwatts (mW).
 
@@ -111,50 +102,36 @@ class SignalAnalytics:
         Returns:
         - power_mw: float, the average power of the signal in milliwatts
         """
-        # Calculate the RMS value of the signal
-        rms_value = np.sqrt(np.mean(np.square(signal)))
-
-        # Calculate the power in watts (P = V^2 / R)
-        power_watts = (rms_value ** 2) / resistance
-
-        # Convert to milliwatts (1 W = 1000 mW)
-        power_mw = power_watts * 1000
-
-        return power_mw
-    
-    """
-    Nivel Ruido
-    """
-    def nivelRuido(signal, resistance=50):
-        """
-        Calculates the noise level of a signal in dBm.
-
-        Parameters:
-        - signal: array-like, the input signal (assumed to be in volts)
-        - resistance: float, the load impedance (in ohms, default is 50 ohms)
-
-        Returns:
-        - noise_dbm: float, the noise level in dBm
-        """
-        # Calculate the RMS value of the noise
-        rms_value = np.sqrt(np.mean(np.square(signal)))
-
-        # Calculate the noise power in watts (P = V^2 / R)
-        power_watts = (rms_value ** 2) / resistance
-
-        # Convert power to dBm (P_dBm = 10 * log10(P_watts) + 30)
-        noise_dbm = 10 * np.log10(power_watts) + 30
-
-        return noise_dbm
+        # Number of samples
+        N = len(self.frecuency)
+        magnitude_squared = np.abs(self.linear_mg) ** 2
+        power = (1 / N) * np.sum(magnitude_squared)
+        print(power)
+        return power
     
     """
     SNR
     """
-    def signaltonoise(a, axis=0, ddof=0):
-        a = np.asanyarray(a)
-        m = a.mean(axis)
-        sd = a.std(axis=axis, ddof=ddof)
-        return np.where(sd == 0, 0, m/sd)
+    def calcular_snr_sin_ruido(self):
+        """
+        Calcula el SNR (relación señal-ruido) estimado sin tener el ruido explícito.
+        
+        Parameters:
+        - signal: array-like, la señal a analizar.
+        
+        Returns:
+        - snr_db: float, el SNR estimado en decibelios (dB).
+        """
+        # Calcular la potencia promedio de la señal (mean squared value)
+        signal_power = np.mean(np.square(self.linear_mg))
+        
+        # Estimar el ruido como la varianza de la señal
+        noise_power = np.var(self.linear_mg)
+        
+        # Calcular el SNR en dB
+        snr_db = 10 * np.log10(signal_power / noise_power)
+        print (snr_db)
+        return snr_db
     
     """
     forma señal
@@ -192,7 +169,7 @@ class SignalAnalytics:
     """
     Frecuencias de espuria
     """
-    def frecuenciasSpuria(fft_signal, sample_rate, threshold=0.1, frequency_range=50):
+    def frecuenciasSpuria(self,threshold=0.1, frequency_range=10**6):
         """
         Detects spurious frequencies in the frequency spectrum.
 
@@ -205,35 +182,22 @@ class SignalAnalytics:
         Returns:
         - spurious_frequencies: list of tuples, where each tuple is (frequency, amplitude).
         """
-        # Number of points in the signal
-        N = len(fft_signal)
         
-        # Get the corresponding frequencies
-        xf = np.fft.fftfreq(N, 1 / sample_rate)
-        
-        # Compute the magnitude (amplitude) of the FFT signal
-        amplitude = np.abs(fft_signal)
-        
-        # Limit to positive frequencies only
-        xf = xf[:N // 2]
-        amplitude = amplitude[:N // 2]
-        
-        # Find the frequency with the maximum amplitude (main signal frequency)
-        main_signal_idx = np.argmax(amplitude)
-        main_frequency = xf[main_signal_idx]
-        main_amplitude = amplitude[main_signal_idx]
+        main_signal_idx = np.argmax(self.linear_mg)
+        main_frequency = self.frecuency[main_signal_idx]
+        main_amplitude = self.linear_mg[main_signal_idx]
         
         # Threshold for detecting spurious frequencies
         spurious_threshold = main_amplitude * threshold
         
         # Find spurious frequencies near the main signal
         spurious_frequencies = []
-        for i, amp in enumerate(amplitude):
-            freq = xf[i]
-            # Check if the frequency is within the defined range and has significant amplitude
+        for i, amp in enumerate(self.linear_mg):
+            freq = self.frecuency[i]
+            # Check if the frequency is within the defined range and has significant amplitudud
             if (main_frequency - frequency_range <= freq <= main_frequency + frequency_range) and (amp < main_amplitude and amp > spurious_threshold):
                 spurious_frequencies.append((freq, amp))
-        
+        print(spurious_frequencies)
         return spurious_frequencies
     
     """
@@ -814,3 +778,14 @@ if __name__ == "__main__":
    signal_analitics.suavizar(window_length=11, polyorder=2)
    signal_analitics.interpolar()
    signal_analitics.plot_3()
+   print("Frecuencia central: ") # Hz 
+   signal_analitics.frecuenciaCentral()
+   print("Ancho de banda: ") # Hz 
+   signal_analitics.anchoDeBanda(threshold_db=-3)
+   print("Potencia de la señal: ") # watts
+   signal_analitics.potencia()
+   print("SNR ") # dB 
+   signal_analitics.calcular_snr_sin_ruido()
+   print("Frecuencias de spurias")  # Hz
+   signal_analitics.frecuenciasSpuria()
+   
