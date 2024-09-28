@@ -1,14 +1,5 @@
-Aquí te proporciono una estructura más completa para el archivo README, incluyendo una tabla de contenido, secciones adicionales, y un espacio para incluir un video de demostración de la app.
-
-### **README.md**
-
----
-
 # Proyecto: Caracterización de Señales de Radiofrecuencia - Reto Codefest Ad Astra 2024
 
-
-
-> **Nota**: Haz clic en la imagen de arriba para ver el video de demostración de la aplicación.
 
 ## Tabla de Contenidos
 
