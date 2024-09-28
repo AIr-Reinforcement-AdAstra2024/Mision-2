@@ -127,3 +127,58 @@ def generate_interference_spectrum(df, interference_list):
     )
 
     return fig
+
+
+def generate_suavizado_plot(df):
+    """
+    Genera una figura de Plotly con el espectro de la señal y las interferencias marcadas,
+    mostrando tanto la señal original como la señal suavizada.
+
+    Parameters:
+    - df: pandas.DataFrame
+        DataFrame con los datos de la señal.
+    - interference_list: list of dict
+        Lista de interferencias detectadas.
+
+    Returns:
+    - fig: plotly.graph_objs._figure.Figure
+        Figura del espectro con interferencias marcadas.
+    """
+    # Crear instancias de SignalAnalytics para obtener los datos procesados
+    threshold = 1e-4
+
+    # Instancia sin suavizar (señal original)
+    signal_analytics_original = SignalAnalytics(df, threshold, suavizar=False)
+    frequency = signal_analytics_original.frecuency
+    amplitude_dbm_original = signal_analytics_original.magnitude
+
+    # Instancia con suavizar=True (señal suavizada)
+    signal_analytics_smoothed = SignalAnalytics(df, threshold, suavizar=True)
+    # Convertir la magnitud lineal suavizada a dBm
+    amplitude_dbm_smoothed = 20 * np.log10(signal_analytics_smoothed.linear_mg)
+
+    fig = go.Figure()
+    # Agregar la señal original
+    fig.add_trace(go.Scatter(
+        x=frequency,
+        y=amplitude_dbm_original,
+        mode='lines',
+        name='Señal Original'
+    ))
+    # Agregar la señal suavizada
+    fig.add_trace(go.Scatter(
+        x=frequency,
+        y=amplitude_dbm_smoothed,
+        mode='lines',
+        name='Señal Suavizada'
+    ))
+
+    fig.update_layout(
+        title='Espectro de la Señal con Interferencias Marcadas',
+        xaxis_title='Frecuencia (Hz)',
+        yaxis_title='Amplitud (dBm)'
+    )
+
+    return fig
+
+

@@ -9,6 +9,7 @@ from .logic import (
     detect_interferences,
     generate_interference_table,
     generate_interference_spectrum,
+    generate_suavizado_plot
 )
 
 @callback(
@@ -52,6 +53,9 @@ def update_interference_analysis(data_json):
         # Generar espectro con interferencias marcadas
         interference_spectrum_fig = generate_interference_spectrum(df, interference_list)
 
+        # Generar gráfico de efecto del suavizado
+        suavizado_fig = generate_suavizado_plot(df)
+
         # Construir el contenido completo
         content = [
             # Componente oculto para almacenar la lista de interferencias
@@ -76,6 +80,19 @@ def update_interference_analysis(data_json):
                         [
                             html.H4("Espectro con Interferencias Marcadas"),
                             dcc.Graph(figure=interference_spectrum_fig),
+                        ],
+                        width=12,
+                    ),
+                ],
+                className='mb-4',
+            ),
+            # Gráfico de Efecto del Suavizado
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.H4("Efecto del Suavizado"),
+                            dcc.Graph(figure=suavizado_fig)
                         ],
                         width=12,
                     ),

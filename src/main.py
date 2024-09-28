@@ -9,7 +9,6 @@ from app import app, server  # Importar la aplicación y el servidor
 from home.layout import layout as home_layout
 from signal_analysis.layout import layout as signal_analysis_layout
 from interferences.layout import layout as interferences_layout
-from visualization.layout import layout as visualization_layout
 from reports.layout import layout as reports_layout
 from about.layout import layout as about_layout
 
@@ -17,7 +16,6 @@ from about.layout import layout as about_layout
 import home.callbacks
 import signal_analysis.callbacks
 import interferences.callbacks
-import visualization.callbacks
 import reports.callbacks
 import about.callbacks
 
@@ -39,7 +37,6 @@ navbar = dbc.Navbar(
                     dbc.NavLink("Inicio", href="/", active="exact"),
                     dbc.NavLink("Análisis de Señal", href="/signal-analysis", active="exact"),
                     dbc.NavLink("Interferencias", href="/interferences", active="exact"),
-                    dbc.NavLink("Visualización", href="/visualization", active="exact"),
                     dbc.NavLink("Reportes", href="/reports", active="exact"),
                     dbc.NavLink("Acerca de", href="/about", active="exact"),
                 ],
@@ -69,8 +66,6 @@ def display_page(pathname):
         return signal_analysis_layout
     elif pathname == '/interferences':
         return interferences_layout
-    elif pathname == '/visualization':
-        return visualization_layout
     elif pathname == '/reports':
         return reports_layout
     elif pathname == '/about':

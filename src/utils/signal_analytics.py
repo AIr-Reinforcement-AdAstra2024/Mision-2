@@ -13,7 +13,7 @@ plt.style.use('classic')
 
 
 class SignalAnalytics:
-    def __init__(self, data, threshold):
+    def __init__(self, data, threshold, suavizar=True):
         """
         Initialize the class with the data file path and a threshold value.
 
@@ -34,7 +34,8 @@ class SignalAnalytics:
 
     
         self.linear_mg = self.magnitude.apply(lambda x: 10**(x/20))
-        self.linear_mg = self.suavizar(window_length=11, polyorder=2)
+        if suavizar:
+            self.linear_mg = self.suavizar(window_length=11, polyorder=2)
         self.fs = 960 * 10 ** 6 # dos veces la frecuencia de muestreo
         self.resistance = 50
 
@@ -739,6 +740,13 @@ class SignalAnalytics:
         plt.xlabel('Lag')
         plt.ylabel('Cross-Correlation')
         plt.show()
+
+
+    def inverse(self):
+        señal_recuperada = np.fft.ifft(self.linear_mg)
+        tiempo_max = (1/self.fs) * len(self.linear_mg)
+        t = np.linspace(0, tiempo_max, len(self.linear_mg))
+        return señal_recuperada, t
 
 
 # if __name__ == "__main__":

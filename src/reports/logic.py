@@ -10,7 +10,12 @@ import numpy as np
 
 # Importar funciones y clases necesarias
 from utils.signal_analytics import SignalAnalytics
-from signal_analysis.logic import calculate_signal_parameters, generate_signal_spectrum, generate_signal_spectrogram
+from signal_analysis.logic import (
+    calculate_signal_parameters,
+    generate_signal_spectrum,
+    generate_signal_spectrogram,
+    generate_inverse_fourier_figure  # Importar la nueva función
+)
 from interferences.logic import detect_interferences, generate_interference_table, generate_interference_spectrum
 
 def get_available_content_options():
@@ -25,6 +30,7 @@ def get_available_content_options():
         {'label': 'Parámetros de la Señal', 'value': 'signal_parameters'},
         {'label': 'Gráfico del Espectro', 'value': 'spectrum_graph'},
         {'label': 'Espectrograma', 'value': 'spectrogram'},
+        {'label': 'Señal en el Dominio del Tiempo', 'value': 'inverse_fourier'},  # Nueva opción
         {'label': 'Interferencias Detectadas', 'value': 'interferences'},
         # Agregar más opciones según sea necesario
     ]
@@ -117,6 +123,15 @@ def generate_report(df, selected_content, comments):
         pdf.ln(5)
 
     # Agregar más contenido según sea necesario
+    if 'inverse_fourier' in selected_content:
+        # Generar y guardar la figura de la Transformada Inversa de Fourier
+        inverse_fourier_fig = generate_inverse_fourier_figure(df)
+        inverse_fourier_fig_path = save_figure(inverse_fourier_fig, 'inverse_fourier.png')
+        # Insertar el gráfico en el PDF
+        pdf.cell(0, 10, txt="Señal en el Dominio del Tiempo (Transformada Inversa de Fourier):", ln=True)
+        pdf.ln(5)
+        pdf.image(inverse_fourier_fig_path, w=180)
+        pdf.ln(5)
 
     # Obtener el directorio raíz (un nivel por encima de 'src/')
     current_dir = os.getcwd()

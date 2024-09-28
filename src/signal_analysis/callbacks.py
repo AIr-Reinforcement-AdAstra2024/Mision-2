@@ -10,6 +10,7 @@ from .logic import (
     calculate_signal_parameters,
     generate_signal_spectrum,
     generate_signal_spectrogram,
+    generate_inverse_fourier_figure  # Importar la nueva función
 )
 
 @callback(
@@ -63,6 +64,9 @@ def update_signal_analysis(data_json):
         # Generar el espectrograma de la señal (Análisis de Espectro Temporal)
         spectrogram_fig = generate_signal_spectrogram(df)
 
+        # Generar la figura de la Transformada Inversa de Fourier
+        inverse_fourier_fig = generate_inverse_fourier_figure(df)
+
         # Construir el contenido completo
         content = [
             # Sección para mostrar los parámetros calculados
@@ -102,6 +106,19 @@ def update_signal_analysis(data_json):
                         [
                             html.H4("Análisis de Espectro Temporal (Waterfall Display)"),
                             dcc.Graph(figure=spectrogram_fig),
+                        ],
+                        width=12,
+                    ),
+                ],
+                className='mb-4',
+            ),
+            # Gráfico de la Transformada Inversa de Fourier
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.H4("Transformada Inversa de Fourier"),
+                            dcc.Graph(figure=inverse_fourier_fig),
                         ],
                         width=12,
                     ),

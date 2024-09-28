@@ -150,3 +150,44 @@ def generate_signal_spectrogram(df):
     fig = signal_analytics.waterfall_display()
 
     return fig
+
+
+def generate_inverse_fourier_figure(df):
+    """
+    Genera una figura de Plotly con la señal en el dominio del tiempo obtenida mediante la Transformada Inversa de Fourier.
+
+    Parameters:
+    - df: pandas.DataFrame
+        DataFrame con los datos de la señal.
+
+    Returns:
+    - fig: plotly.graph_objs._figure.Figure
+        Figura de la señal en el dominio del tiempo.
+    """
+    # Crear una instancia de SignalAnalytics
+    threshold = 1e-4  # Ajusta el umbral según sea necesario
+    signal_analytics = SignalAnalytics(df, threshold)
+
+    # Obtener la señal recuperada y el vector de tiempo
+    señal_recuperada, t = signal_analytics.inverse()
+
+    # Convertir la señal recuperada a dominio real (en caso de que sea compleja)
+    señal_recuperada_real = np.real(señal_recuperada)
+
+    # Crear la figura utilizando Plotly
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=t,
+        y=señal_recuperada_real,
+        mode='lines',
+        name='Señal Recuperada'
+    ))
+
+    fig.update_layout(
+        title='Señal en el Dominio del Tiempo (Transformada Inversa de Fourier)',
+        xaxis_title='Tiempo (s)',
+        yaxis_title='Amplitud',
+        template='plotly_white'
+    )
+
+    return fig
