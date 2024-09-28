@@ -66,7 +66,7 @@ pip install -r requirements.txt
 Clona el repositorio en tu máquina local con el siguiente comando:
 
 ```bash
-git clone https://github.com/tu_usuario/tu_repositorio.git
+git clone https://github.com/AIr-Reinforcement-AdAstra2024/Mision-2.git
 ```
 
 ### 2. Navegar al Directorio del Proyecto
