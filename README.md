@@ -18,5 +18,3 @@ El programa utiliza python3 para generar la interfaz junto con varias librerías
 ##**Guía de uso**
 
 Una vez con las librerías instaladas ejecutar el archvio *main.py* ubicado en la carpeta de *src*. 
-
-
