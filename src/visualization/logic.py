@@ -18,14 +18,14 @@ def generate_spectrogram(df):
         Figura del espectrograma.
     """
     # Placeholder para el espectrograma real
-    # Supongamos que df tiene columnas 'Time', 'Frequency', 'Amplitude'
+    # Supongamos que df tiene columnas 'Time', 'frecuency', 'magnitude'
 
     # Crear una matriz para el espectrograma
     if 'Time' not in df.columns:
         # Si no hay columna 'Time', simulamos tiempos
         df['Time'] = np.linspace(0, 1, len(df))
 
-    pivot_df = df.pivot(index='Frequency', columns='Time', values='Amplitude')
+    pivot_df = df.pivot(index='frecuency', columns='Time', values='magnitude')
 
     fig = go.Figure(data=go.Heatmap(
         x=pivot_df.columns,
@@ -61,9 +61,9 @@ def generate_temporal_spectrum_analysis(df):
         df['Time'] = np.linspace(0, 1, len(df))
 
     # Calcular la potencia total en cada instante de tiempo
-    power_by_time = df.groupby('Time')['Amplitude'].sum().reset_index()
+    power_by_time = df.groupby('Time')['magnitude'].sum().reset_index()
 
-    fig = px.line(power_by_time, x='Time', y='Amplitude', title='Potencia Total vs. Tiempo')
+    fig = px.line(power_by_time, x='Time', y='magnitude', title='Potencia Total vs. Tiempo')
     fig.update_xaxes(title='Tiempo (s)')
     fig.update_yaxes(title='Potencia (dBm)')
 
@@ -85,16 +85,16 @@ def generate_comparison_graphs(df):
     # Supongamos que aplicamos un filtrado simple
 
     # Gráfico antes del filtrado
-    fig_before = px.line(df, x='Frequency', y='Amplitude', title='Espectro Antes del Filtrado')
+    fig_before = px.line(df, x='frecuency', y='magnitude', title='Espectro Antes del Filtrado')
     fig_before.update_xaxes(title='Frecuencia (Hz)')
     fig_before.update_yaxes(title='Amplitud (dBm)')
 
     # Aplicar un filtro simple (por ejemplo, eliminar frecuencias por encima de un umbral)
-    threshold = df['Amplitude'].mean() + 2 * df['Amplitude'].std()
-    df_filtered = df[df['Amplitude'] <= threshold]
+    threshold = df['magnitude'].mean() + 2 * df['magnitude'].std()
+    df_filtered = df[df['magnitude'] <= threshold]
 
     # Gráfico después del filtrado
-    fig_after = px.line(df_filtered, x='Frequency', y='Amplitude', title='Espectro Después del Filtrado')
+    fig_after = px.line(df_filtered, x='frecuency', y='magnitude', title='Espectro Después del Filtrado')
     fig_after.update_xaxes(title='Frecuencia (Hz)')
     fig_after.update_yaxes(title='Amplitud (dBm)')
 

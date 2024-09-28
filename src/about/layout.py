@@ -14,9 +14,7 @@ layout = dbc.Container(
                         html.H4("Motivación del Proyecto"),
                         html.P(
                             """
-                            El proyecto surge de la necesidad de contar con herramientas accesibles y eficientes para el análisis de señales de radiofrecuencia. 
-                            Con el creciente uso del espectro electromagnético, es crucial disponer de soluciones que permitan identificar interferencias y optimizar 
-                            las comunicaciones inalámbricas.
+                            Las misiones satelitales de observación de la Tierra son cruciales para el monitoreo ambiental, la gestión de desastres naturales y la predicción meteorológica. Estos satélites transmiten datos a través de enlaces de radiofrecuencia (RF) que pueden sufrir interferencias y atenuación, afectando la calidad de la señal y la integridad de los datos. Una caracterización detallada de las señales RF es esencial para identificar y mitigar estos problemas, permitiendo optimizar la eficiencia espectral y asegurar transmisiones de datos fiables y de alta calidad desde los satélites hasta las estaciones terrestres.
                             """
                         ),
                         html.H4("Tecnologías Utilizadas"),

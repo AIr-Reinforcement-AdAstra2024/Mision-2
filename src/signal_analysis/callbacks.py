@@ -2,14 +2,12 @@
 
 from dash import Input, Output, State, callback, html, dcc
 import dash_bootstrap_components as dbc
-import plotly.express as px
-import plotly.graph_objects as go
 import pandas as pd
+import numpy as np
 
 from app import app  # Importar la instancia de la aplicación
 from .logic import (
     calculate_signal_parameters,
-    calculate_link_parameters,
     generate_signal_spectrum,
     generate_signal_spectrogram,
 )
@@ -47,28 +45,22 @@ def update_signal_analysis(data_json):
         signal_params_dict = calculate_signal_parameters(df)
         signal_params = []
         for param_name, param_value in signal_params_dict.items():
+            if isinstance(param_value, np.ndarray):
+                # Si el valor es un arreglo (por ejemplo, frecuencias espurias), mostrar como lista
+                param_value_formatted = ', '.join([f"{val:.2f}" for val in param_value])
+            else:
+                param_value_formatted = f"{param_value}"
             signal_params.append(
                 html.Div([
                     html.H5(param_name),
-                    html.P(f"{param_value}"),
-                ])
-            )
-
-        # Calcular los parámetros del enlace
-        link_params_dict = calculate_link_parameters(df)
-        link_params = []
-        for param_name, param_value in link_params_dict.items():
-            link_params.append(
-                html.Div([
-                    html.H5(param_name),
-                    html.P(f"{param_value}"),
+                    html.P(param_value_formatted),
                 ])
             )
 
         # Generar el espectro de la señal
         spectrum_fig = generate_signal_spectrum(df)
 
-        # Generar el espectrograma de la señal
+        # Generar el espectrograma de la señal (Análisis de Espectro Temporal)
         spectrogram_fig = generate_signal_spectrogram(df)
 
         # Construir el contenido completo
@@ -78,17 +70,14 @@ def update_signal_analysis(data_json):
                 [
                     dbc.Col(
                         [
-                            html.H4("Parámetros de la Señal"),
-                            html.Div(signal_params),
+                            html.H4("Parámetros de la Señal", style={'margin-bottom': '25px'}),
+                            html.Div(signal_params, style={
+                                'display': 'grid',
+                                'grid-template-columns': '1fr 1fr 1fr',
+                                'gap': '10px',
+                            }),
                         ],
-                        width=6,
-                    ),
-                    dbc.Col(
-                        [
-                            html.H4("Parámetros del Enlace de Comunicaciones"),
-                            html.Div(link_params),
-                        ],
-                        width=6,
+                        width=12,
                     ),
                 ],
                 className='mb-4',

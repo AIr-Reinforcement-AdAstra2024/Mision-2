@@ -4,97 +4,113 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+from utils.signal_analytics import SignalAnalytics  # Asegúrate de importar la clase correctamente
+
 
 def calculate_signal_parameters(df):
     """
-    Calcula los parámetros de la señal de RF a partir del DataFrame dado.
+    Calcula los parámetros de la señal utilizando la clase SignalAnalytics.
 
     Parameters:
     - df: pandas.DataFrame
         DataFrame con los datos de la señal.
 
     Returns:
-    - parameters: dict
-        Diccionario con los parámetros calculados de la señal.
+    - signal_params: dict
+        Diccionario con los parámetros de la señal.
     """
-    # Implementación real o placeholder
+    # Guardar el DataFrame en un archivo CSV temporal (si es necesario)
+    # Si SignalAnalytics puede aceptar un DataFrame directamente, puedes modificar su __init__
 
-    # Frecuencia central
-    max_index = df['Amplitude'].idxmax()
-    frequency_central = df.loc[max_index, 'Frequency']
+    # Crear una instancia de SignalAnalytics
+    threshold = 1e-4  # Ajusta el umbral según sea necesario
+    signal_analytics = SignalAnalytics(df, threshold)
 
-    # Ancho de banda (BW)
-    threshold = df['Amplitude'].max() - 3
-    bw_df = df[df['Amplitude'] >= threshold]
-    bandwidth = bw_df['Frequency'].max() - bw_df['Frequency'].min()
+    # Obtener la frecuencia central
+    central_frequency = signal_analytics.frecuenciaCentral()
 
-    # Amplitud/Potencia
-    power = df['Amplitude'].mean()
+    # Obtener el ancho de banda
+    bandwidth_info = signal_analytics.anchoDeBanda(threshold_db=-3)
+    if bandwidth_info is not None:
+        bandwidth, freq_low, freq_high = bandwidth_info
+    else:
+        bandwidth, freq_low, freq_high = None, None, None
 
-    # Nivel de ruido
-    noise_level = df['Amplitude'].min()
+    # Obtener la potencia de la señal
+    power_mw = signal_analytics.potencia()
+    power_dbm = 10 * np.log10(power_mw)
 
-    # Relación señal-ruido (SNR)
-    snr = power - noise_level
+    # Nivel de ruido (se estima fuera del ancho de banda)
+    # Podemos usar las frecuencias fuera del ancho de banda para estimar el ruido
+    noise_indices = np.where((signal_analytics.frecuency < freq_low) | (signal_analytics.frecuency > freq_high))[0]
+    if len(noise_indices) > 0:
+        noise_power = np.mean(signal_analytics.linear_mg[noise_indices] ** 2)
+        noise_power_dbm = 10 * np.log10(noise_power)
+    else:
+        noise_power_dbm = None
 
-    # Forma de la señal
-    signal_shape = "Forma de la señal (placeholder)"
+    # Calcular SNR
+    if noise_power_dbm is not None:
+        snr = power_dbm - noise_power_dbm
+    else:
+        snr = None
+
+    # Factor de cresta
+    crest_factor = signal_analytics.calculate_crest_factor()
 
     # Picos espectrales
-    spectral_peaks = "Picos espectrales (placeholder)"
+    peaks_indices = signal_analytics.detect_peaks()
+    spectral_peaks = signal_analytics.frecuency[peaks_indices]
 
-    parameters = {
-        "Frecuencia Central": f"{frequency_central:.2f} Hz",
-        "Ancho de Banda (BW)": f"{bandwidth:.2f} Hz",
-        "Amplitud/Potencia": f"{power:.2f} dBm",
-        "Nivel de Ruido": f"{noise_level:.2f} dBm",
-        "Relación Señal-Ruido (SNR)": f"{snr:.2f} dB",
-        "Forma de la Señal": signal_shape,
-        "Picos Espectrales": spectral_peaks,
-        # Agregar más parámetros según sea necesario
-    }
-
-    return parameters
-
-def calculate_link_parameters(df):
-    """
-    Calcula los parámetros del enlace de comunicaciones a partir del DataFrame dado.
-
-    Parameters:
-    - df: pandas.DataFrame
-        DataFrame con los datos de la señal.
-
-    Returns:
-    - parameters: dict
-        Diccionario con los parámetros calculados del enlace.
-    """
-    # Implementación real o placeholder
-
-    # Frecuencias de espuria
-    spurious_frequencies = "Frecuencias espurias (placeholder)"
+    # Frecuencias espurias
+    spurious_frequencies = signal_analytics.frecuenciasSpuria()
 
     # Frecuencias armónicas
-    harmonic_frequencies = "Frecuencias armónicas (placeholder)"
+    harmonic_frequencies = signal_analytics.detect_harmonics()
 
-    # Modulación
-    modulation_type = "Modulación (placeholder)"
+    # Tipo de modulación
+    modulation_type = signal_analytics.detect_modulation_from_frequency_series()
 
     # Análisis de ancho de banda de ocupación
-    bandwidth_occupation = "Ancho de banda ocupado (placeholder)"
+    if bandwidth is not None:
+        bw_utilization = signal_analytics.determine_bandwidth_utilization(freq_low, freq_high)
+    else:
+        bw_utilization = None
 
-    # Crest factor
-    crest_factor = "Crest factor (placeholder)"
+    # Frecuencia de repetición de pulso (PRF)
+    prf = signal_analytics.calculate_prf()
 
-    parameters = {
-        "Frecuencias Espurias": spurious_frequencies,
-        "Frecuencias Armónicas": harmonic_frequencies,
-        "Modulación": modulation_type,
-        "Análisis de Ancho de Banda de Ocupación": bandwidth_occupation,
-        "Crest Factor": crest_factor,
-        # Agregar más parámetros según sea necesario
+    # Drift de frecuencia
+    t, main_frequencies = signal_analytics.detect_main_frequency_changes_from_fft()
+
+    # Tiempo de ocupación
+    active_time, total_time, presence_fraction = signal_analytics.detect_signal_presence_in_spectrum()
+
+    # Medición de potencia de canal (ejemplo para el canal principal)
+    power_in_band = signal_analytics.calculate_power_in_bandwidth(freq_low, freq_high)
+
+    # Almacenar los parámetros en un diccionario
+    signal_params = {
+        "Frecuencia Central (MHz)": central_frequency / 1_000_000,
+        "Ancho de Banda (MHz)": bandwidth / 1_000_000,
+        "Potencia Total (dBm)": round(power_dbm, 2),
+        "Nivel de Ruido (dBm)": round(noise_power_dbm, 2) if noise_power_dbm is not None else "N/A",
+        "Relación Señal-Ruido (SNR) (dB)": round(snr, 2) if snr is not None else "N/A",
+        "Crest Factor": round(crest_factor, 2),
+        "Picos Espectrales (MHz)": ', '.join([str(freq / 1_000_000) for freq in spectral_peaks]) if len(spectral_peaks) else "N/A",
+        "Frecuencias Espurias (MHz)": ', '.join([str(freq / 1_000_000) for freq, amp in spurious_frequencies]) if len(spurious_frequencies) else "N/A",
+        "Frecuencias Armónicas (MHz)": ', '.join([str(freq / 1_000_000) for freq in harmonic_frequencies]) if len(harmonic_frequencies) else "N/A",
+        "Tipo de Modulación": modulation_type,
+        "Utilización de Ancho de Banda": f"{bw_utilization*100:.2f}%" if bw_utilization is not None else "N/A",
+        "Frecuencia de Repetición de Pulso (PRF) (MHz)": prf / 1_000_000 if prf is not None else "N/A",
+        "Tiempo de Ocupación (s)": round(active_time, 2),
+        "Fracción de Tiempo de Ocupación": f"{presence_fraction*100:.2f}%",
+        "Potencia en el Canal (mW)": round(power_in_band, 2),
+        # Agrega más parámetros si es necesario
     }
 
-    return parameters
+    return signal_params
+
 
 def generate_signal_spectrum(df):
     """
@@ -108,7 +124,8 @@ def generate_signal_spectrum(df):
     - fig: plotly.graph_objs._figure.Figure
         Figura del espectro de la señal.
     """
-    fig = px.line(df, x='Frequency', y='Amplitude', title='Espectro de la Señal')
+    print("Ejecutando generate_signal_spectrum")
+    fig = px.line(df, x='frecuency', y='magnitude', title='Espectro de la Señal')
     fig.update_xaxes(title='Frecuencia (Hz)')
     fig.update_yaxes(title='Amplitud (dBm)')
     return fig
@@ -125,28 +142,11 @@ def generate_signal_spectrogram(df):
     - fig: plotly.graph_objs._figure.Figure
         Figura del espectrograma de la señal.
     """
-    # Placeholder para el espectrograma real
-    # Por ahora, creamos un gráfico de calor simplificado
+    # Crear una instancia de SignalAnalytics
+    threshold = 1e-4  # Ajusta el umbral según sea necesario
+    signal_analytics = SignalAnalytics(df, threshold)
 
-    # Supongamos que df tiene columnas 'Time', 'Frequency', 'Amplitude'
-    # Si no es así, necesitamos simular datos para el ejemplo
-
-    # Crear una matriz de ejemplo para el espectrograma
-    times = np.linspace(0, 10, num=50)  # Simulando 50 instantes de tiempo
-    frequencies = df['Frequency'].unique()
-    amplitude_matrix = np.random.rand(len(frequencies), len(times))  # Datos aleatorios para el ejemplo
-
-    fig = go.Figure(data=go.Heatmap(
-        x=times,
-        y=frequencies,
-        z=amplitude_matrix,
-        colorscale='Viridis'
-    ))
-
-    fig.update_layout(
-        title='Espectrograma de la Señal',
-        xaxis_title='Tiempo (s)',
-        yaxis_title='Frecuencia (Hz)'
-    )
+    # Obtener la figura del espectrograma
+    fig = signal_analytics.waterfall_display()
 
     return fig

@@ -9,15 +9,13 @@ from .logic import (
     detect_interferences,
     generate_interference_table,
     generate_interference_spectrum,
-    apply_filters,
 )
 
 @callback(
     Output('interference-content', 'children'),
     Input('stored-data', 'data'),
-    State('stored-data', 'data')
 )
-def update_interference_analysis(data_json, data_state):
+def update_interference_analysis(data_json):
     """
     Callback para actualizar el contenido de la página de interferencias.
 
@@ -45,6 +43,9 @@ def update_interference_analysis(data_json, data_state):
         # Detectar interferencias
         interference_list = detect_interferences(df)
 
+        # Guardar la lista de interferencias en un componente de almacenamiento oculto
+        interference_data = pd.DataFrame(interference_list).to_json(date_format='iso', orient='split')
+
         # Generar tabla de interferencias
         interference_table = generate_interference_table(interference_list)
 
@@ -53,6 +54,8 @@ def update_interference_analysis(data_json, data_state):
 
         # Construir el contenido completo
         content = [
+            # Componente oculto para almacenar la lista de interferencias
+            dcc.Store(id='stored-interferences', data=interference_data),
             # Sección para mostrar la tabla de interferencias detectadas
             dbc.Row(
                 [
@@ -79,53 +82,7 @@ def update_interference_analysis(data_json, data_state):
                 ],
                 className='mb-4',
             ),
-            # Opciones de Filtrado
-            dbc.Row(
-                [
-                    dbc.Col(
-                        [
-                            html.H4("Opciones de Filtrado"),
-                            # Aquí puedes agregar controles para seleccionar filtros
-                            html.Div(id='filter-options'),
-                            # Botón para aplicar filtros
-                            dbc.Button("Aplicar Filtros", id='apply-filters-btn', color="primary"),
-                        ],
-                        width=12,
-                    ),
-                ],
-                className='mb-4',
-            ),
-            # Gráfico del Espectro Filtrado
-            dbc.Row(
-                [
-                    dbc.Col(
-                        [
-                            html.H4("Espectro Después del Filtrado"),
-                            dcc.Graph(id='filtered-spectrum'),
-                        ],
-                        width=12,
-                    ),
-                ],
-                className='mb-4',
-            ),
         ]
 
         return content
 
-# Callback para aplicar los filtros y actualizar el espectro filtrado
-@callback(
-    Output('filtered-spectrum', 'figure'),
-    Input('apply-filters-btn', 'n_clicks'),
-    State('stored-data', 'data'),
-    prevent_initial_call=True
-)
-def update_filtered_spectrum(n_clicks, data_json):
-    if n_clicks is None or data_json is None:
-        return {}
-    else:
-        df = pd.read_json(data_json, orient='split')
-        # Aplicar filtros
-        filtered_df = apply_filters(df)
-        # Generar espectro filtrado
-        filtered_spectrum_fig = generate_interference_spectrum(filtered_df, [])
-        return filtered_spectrum_fig

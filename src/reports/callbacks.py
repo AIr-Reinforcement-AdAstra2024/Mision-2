@@ -65,7 +65,7 @@ def update_reports_page(data_json):
         generate_button = dbc.Button("Generar Reporte", id='generate-report-btn', color="primary")
 
         # Espacio para mostrar el enlace de descarga
-        download_link = html.Div(id='download-link')
+        download_link = dbc.Button(id='download-link', color='success', style={'display': 'none'})
 
         # Construir el contenido completo
         content = [
@@ -73,9 +73,10 @@ def update_reports_page(data_json):
                 [
                     content_checklist,
                     additional_info,
-                    generate_button,
-                    html.Br(),
-                    download_link,
+                    dbc.Row([
+                        generate_button,
+                        download_link
+                    ], style={'display': 'flex', 'gap': '10px', 'flex-direction': 'row'})
                 ]
             )
         ]
@@ -85,6 +86,7 @@ def update_reports_page(data_json):
 # Callback para generar el reporte y proporcionar el enlace de descarga
 @callback(
     Output('download-link', 'children'),
+    Output('download-link', 'style'),
     Input('generate-report-btn', 'n_clicks'),
     State('report-content-options', 'value'),
     State('additional-comments', 'value'),
@@ -109,4 +111,6 @@ def generate_report_callback(n_clicks, selected_content, comments, data_json):
             className='btn btn-success'
         )
 
-        return download_component
+        style = {'display': 'block'}
+
+        return download_component, style

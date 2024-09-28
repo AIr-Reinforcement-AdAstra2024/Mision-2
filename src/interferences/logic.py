@@ -3,11 +3,12 @@
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import plotly.express as px
+from dash import html
+from utils.signal_analytics import SignalAnalytics  # Asegúrate de importar la clase correctamente
 
 def detect_interferences(df):
     """
-    Detecta interferencias en el espectro de la señal.
+    Detecta interferencias en el espectro de la señal utilizando SignalAnalytics.
 
     Parameters:
     - df: pandas.DataFrame
@@ -17,21 +18,36 @@ def detect_interferences(df):
     - interference_list: list of dict
         Lista de diccionarios con información de las interferencias detectadas.
     """
-    # Placeholder para la detección real de interferencias
-    # Por ahora, simulamos algunas interferencias
+    # Crear una instancia de SignalAnalytics
+    threshold = 1e-4  # Ajusta el umbral según sea necesario
+    signal_analytics = SignalAnalytics(df, threshold)
 
-    # Simulamos que las interferencias son los puntos donde la amplitud supera un umbral
-    threshold = df['Amplitude'].mean() + 2 * df['Amplitude'].std()
-    interference_df = df[df['Amplitude'] > threshold]
+    # Definir los canales a evaluar (puedes ajustar esto según tus necesidades)
+    # Por ejemplo, dividimos el espectro en canales de ancho fijo
+    total_bandwidth = signal_analytics.frecuency.max() - signal_analytics.frecuency.min()
+    num_channels = 10  # Número de canales
+    channel_bandwidth = total_bandwidth / num_channels
+    channel_centers = np.linspace(
+        signal_analytics.frecuency.min() + channel_bandwidth / 2,
+        signal_analytics.frecuency.max() - channel_bandwidth / 2,
+        num_channels
+    )
+
+    # Evaluar interferencias por canal
+    interference_results = signal_analytics.evaluate_interference_by_channel(channel_centers, channel_bandwidth)
 
     interference_list = []
-    for index, row in interference_df.iterrows():
-        interference = {
-            'Frequency': row['Frequency'],
-            'Amplitude': row['Amplitude'],
-            'Type': 'Interferencia detectada'  # Placeholder
-        }
-        interference_list.append(interference)
+    for center_freq, power in interference_results:
+        # Aquí podemos definir un umbral para considerar que hay interferencia
+        # Por ejemplo, si la potencia en el canal supera cierto nivel
+        interference_threshold = np.mean([p for _, p in interference_results]) + 2 * np.std([p for _, p in interference_results])
+        if power > interference_threshold:
+            interference = {
+                'Frequency (MHz)': center_freq / 1_000_000,
+                'Power': power,
+                'Type': 'Interferencia detectada'
+            }
+            interference_list.append(interference)
 
     return interference_list
 
@@ -77,22 +93,28 @@ def generate_interference_spectrum(df, interference_list):
     - fig: plotly.graph_objs._figure.Figure
         Figura del espectro con interferencias marcadas.
     """
+    # Crear una instancia de SignalAnalytics para obtener los datos procesados
+    threshold = 1e-4
+    signal_analytics = SignalAnalytics(df, threshold)
+    frequency = signal_analytics.frecuency
+    amplitude_dbm = signal_analytics.magnitude
+
     fig = go.Figure()
     # Agregar la señal original
     fig.add_trace(go.Scatter(
-        x=df['Frequency'],
-        y=df['Amplitude'],
+        x=frequency,
+        y=amplitude_dbm,
         mode='lines',
         name='Señal Original'
     ))
 
     # Marcar las interferencias
     if interference_list:
-        frequencies = [interf['Frequency'] for interf in interference_list]
-        amplitudes = [interf['Amplitude'] for interf in interference_list]
+        frequencies = [interf['Frequency (MHz)'] * 1_000_000 for interf in interference_list]
+        #powers = [interf['Power'] for interf in interference_list]
         fig.add_trace(go.Scatter(
             x=frequencies,
-            y=amplitudes,
+            y=amplitude_dbm,
             mode='markers',
             marker=dict(color='red', size=10, symbol='x'),
             name='Interferencias'
@@ -105,21 +127,3 @@ def generate_interference_spectrum(df, interference_list):
     )
 
     return fig
-
-def apply_filters(df):
-    """
-    Aplica filtros para eliminar las interferencias detectadas.
-
-    Parameters:
-    - df: pandas.DataFrame
-        DataFrame con los datos de la señal.
-
-    Returns:
-    - filtered_df: pandas.DataFrame
-        DataFrame con las interferencias eliminadas.
-    """
-    # Placeholder para la aplicación real de filtros
-    # Por ahora, eliminamos los puntos donde la amplitud supera un umbral
-    threshold = df['Amplitude'].mean() + 2 * df['Amplitude'].std()
-    filtered_df = df[df['Amplitude'] <= threshold]
-    return filtered_df

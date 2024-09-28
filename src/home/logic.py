@@ -22,7 +22,7 @@ def read_csv_content(contents, filename):
     decoded = base64.b64decode(content_string)
     try:
         # Asumimos que es un archivo CSV
-        df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+        df = pd.read_csv(io.StringIO(decoded.decode('utf-8')), sep=';')
         return df
     except Exception as e:
         raise ValueError(f"Error al leer el archivo CSV: {str(e)}")

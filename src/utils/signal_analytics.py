@@ -22,7 +22,7 @@ class SignalAnalytics:
         threshold (float): Threshold value for any analysis requiring it.
         """
         # Load the CSV file as a DataFrame
-        self.data = pd.read_csv(data, skiprows=47, delimiter=";")
+        self.data = data.copy()
         self.threshold = threshold
         self.signal = None
         self.frecuency = self.data.iloc[:, 0].replace(',', '.', regex=True)
@@ -34,7 +34,9 @@ class SignalAnalytics:
 
     
         self.linear_mg = self.magnitude.apply(lambda x: 10**(x/20))
-    
+        self.linear_mg = self.suavizar(window_length=11, polyorder=2)
+        self.fs = 960 * 10 ** 6 # dos veces la frecuencia de muestreo
+        self.resistance = 50
 
     """
     Main Frecuency
@@ -91,6 +93,30 @@ class SignalAnalytics:
     """
     Potencia⑀
     """
+    def potencia_frecuencia(self, resistance=50):
+        """
+        Calculates the power of a signal in milliwatts (mW) in the frequency domain.
+
+        Parameters:
+        - signal: array-like, the input signal in the frequency domain (assumed in volts or linear scale)
+        - resistance: float, the load impedance (in ohms, default is 50 ohms)
+
+        Returns:
+        - power_mw: float, the total power of the signal in milliwatts
+        """
+        # Calculate the magnitude squared of the signal (power spectral density)
+        magnitude_squared = np.abs(self.linear_mg) ** 2
+
+        # Calculate power for each frequency component (P = |V|^2 / R)
+        power_watts = magnitude_squared / resistance
+
+        # Sum the power over all frequency components to get total power
+        total_power_watts = np.sum(power_watts)
+
+        # Convert to milliwatts (1 W = 1000 mW)
+        total_power_mw = total_power_watts * 1000
+        print(total_power_mw)
+        return total_power_mw
     def potencia(self):
         """
         Calculates the power of a signal in milliwatts (mW).
@@ -106,8 +132,8 @@ class SignalAnalytics:
         N = len(self.frecuency)
         magnitude_squared = np.abs(self.linear_mg) ** 2
         power = (1 / N) * np.sum(magnitude_squared)
-        print(power)
-        return power
+        print(power*1000)
+        return power*1000
     
     """
     SNR
@@ -203,8 +229,8 @@ class SignalAnalytics:
     """
     Frecuencias armónicas
     """
-    def detect_harmonics_in_fft(fft_signal, sample_rate, fundamental_freq, 
-                            threshold=0.1, tolerance=0.05):
+    def detect_harmonics(self, 
+                            threshold=10**-4, tolerance=0.3):
         """
         Detects harmonic frequencies in a given FFT signal.
 
@@ -219,125 +245,69 @@ class SignalAnalytics:
         Returns:
         - harmonic_frequencies: list of detected harmonic frequencies (in Hz).
         """
-        # Number of points in the FFT signal
-        N = len(fft_signal)
-        
-        # Calculate the frequencies for the FFT bins
-        xf = np.fft.fftfreq(N, 1 / sample_rate)
-        
-        # Compute the magnitude of the FFT and limit to positive frequencies
-        amplitude = np.abs(fft_signal[:N // 2])
-        xf = xf[:N // 2]
-        
+        fundamental_freq = self.fs
         # Detect peaks in the FFT spectrum
-        peaks, _ = find_peaks(amplitude, height=np.max(amplitude) * threshold)
+        peaks, _ = find_peaks(self.linear_mg, height=np.max(self.linear_mg) * threshold)
         
         # Detect harmonics based on the fundamental frequency
         harmonic_frequencies = []
-        for i in range(2, len(xf) // int(fundamental_freq)):
+        for i in range(2, len(self.frecuency) // int(fundamental_freq)):
             harmonic_freq = fundamental_freq * i
             # Find the closest peak to the expected harmonic
-            closest_peak = min(peaks, key=lambda x: abs(xf[x] - harmonic_freq))
-            if abs(xf[closest_peak] - harmonic_freq) < fundamental_freq * tolerance:
-                harmonic_frequencies.append(xf[closest_peak])
-        
+            closest_peak = min(peaks, key=lambda x: abs(self.frecuency[x] - harmonic_freq))
+            if abs(self.frecuency[closest_peak] - harmonic_freq) < fundamental_freq * tolerance:
+                harmonic_frequencies.append(self.frecuency[closest_peak])
+        print(harmonic_frequencies)
         return harmonic_frequencies
-    
-    
-    """
-    Interferencias
-    """
-    def eliminate_interference(fft_signal, sample_rate, fundamental_freq, threshold=0.1):
-        """
-        Eliminates interference signals from an FFT-transformed signal using `scipy.signal`.
-
-        Parameters:
-        - fft_signal: array-like, the input signal in the frequency domain (FFT).
-        - sample_rate: int, the sampling rate of the original time-domain signal (in Hz).
-        - fundamental_freq: float, the fundamental frequency to retain (in Hz).
-        - threshold: float, relative amplitude threshold for detecting interference signals.
-
-        Returns:
-        - cleaned_fft_signal: the FFT signal with interference frequencies eliminated.
-        """
-        # Length of the signal
-        N = len(fft_signal)
-        
-        # Compute the frequencies corresponding to the FFT bins
-        xf = np.fft.fftfreq(N, 1 / sample_rate)
-        
-        # Compute the magnitude of the FFT signal
-        amplitude = np.abs(fft_signal[:N // 2])  # Positive frequencies only
-        xf = xf[:N // 2]  # Limit frequencies to positive side only
-        
-        # Detect peaks in the FFT amplitude spectrum
-        peaks, properties = find_peaks(amplitude, height=np.max(amplitude) * threshold)
-        
-        # Find interference peaks (peaks that are not multiples of the fundamental frequency)
-        interference_peaks = []
-        for peak_idx in peaks:
-            freq = xf[peak_idx]
-            # Check if the frequency is not a harmonic of the fundamental frequency
-            if not np.isclose(freq % fundamental_freq, 0, atol=fundamental_freq * 0.05):
-                interference_peaks.append(peak_idx)
-        
-        # Copy the FFT signal for modification
-        cleaned_fft_signal = fft_signal.copy()
-        
-        # Zero out the interference peaks
-        for peak_idx in interference_peaks:
-            cleaned_fft_signal[peak_idx] = 0
-            # Since FFT is symmetric, zero the corresponding negative frequency as well
-            cleaned_fft_signal[-peak_idx] = 0
-        
-        return cleaned_fft_signal
     
     """
     Modulación
     """
-    def detect_modulation(signal, sample_rate):
+    import numpy as np
+
+    def detect_modulation_from_frequency_series(self):
         """
-        Detects the modulation type of a given signal.
+        Detects the modulation type from a frequency-domain signal.
         
         Parameters:
-        - signal: array-like, the input time-domain signal.
-        - sample_rate: int, the sample rate of the signal (in Hz).
-
+        - frequency_series: array-like, the input frequency-domain signal (magnitude and phase).
+        - sample_rate: int, the sample rate of the original signal (in Hz).
+        
         Returns:
         - modulation_type: string, the detected modulation type (AM, FM, PM, QAM, or Unknown).
         """
-        # Apply the Hilbert transform to extract the analytic signal (complex signal)
-        analytic_signal = hilbert(signal)
+        # Extract amplitude (magnitude) and phase from the frequency series
+        amplitude_spectrum = np.abs(self.linear_mg)
+        phase_spectrum = np.angle(self.linear_mg)
+        # Calculate the instantaneous frequency from phase differences
+        instantaneous_frequency = np.diff(phase_spectrum) / (2.0 * np.pi) * self.fs
         
-        # Extract amplitude envelope (AM detection)
-        amplitude_envelope = np.abs(analytic_signal)
+        # Check for Amplitude Modulation (AM): Look for variations in the amplitude spectrum
+        if np.std(amplitude_spectrum) > 0.1 * np.mean(amplitude_spectrum):
+            modulation = "AM"
+            return modulation
         
-        # Extract instantaneous phase
-        instantaneous_phase = np.unwrap(np.angle(analytic_signal))
-        
-        # Extract instantaneous frequency (FM detection)
-        instantaneous_frequency = np.diff(instantaneous_phase) / (2.0 * np.pi) * sample_rate
-        
-        # Check for Amplitude Modulation (AM): Look for variations in the amplitude envelope
-        if np.std(amplitude_envelope) > 0.1 * np.mean(amplitude_envelope):
-            return "AM"
-        
-        # Check for Frequency Modulation (FM): Look for variations in instantaneous frequency
+        # Check for Frequency Modulation (FM): Look for variations in the phase differences (instantaneous frequency)
         if np.std(instantaneous_frequency) > 0.1 * np.mean(np.abs(instantaneous_frequency)):
-            return "FM"
+            modulation = "FM"
+            return modulation
         
         # Check for Phase Modulation (PM): Look for variations in phase
-        if np.std(np.diff(instantaneous_phase)) > 0.1 * np.mean(np.abs(np.diff(instantaneous_phase))):
-            return "PM"
+        if np.std(np.diff(phase_spectrum)) > 0.1 * np.mean(np.abs(np.diff(phase_spectrum))):
+            modulation = "PM"
+            return modulation
         
         # Check for Quadrature Amplitude Modulation (QAM): Look for significant in-phase and quadrature components
-        in_phase = np.real(analytic_signal)
-        quadrature = np.imag(analytic_signal)
+        # In frequency domain, we use real and imaginary parts to detect QAM-like modulation
+        in_phase = np.real(self.linear_mg)
+        quadrature = np.imag(self.linear_mg)
         if np.std(in_phase) > 0.1 * np.mean(np.abs(in_phase)) and np.std(quadrature) > 0.1 * np.mean(np.abs(quadrature)):
-            return "QAM"
+            modulation = "QAM"
+            return modulation
         
         # If no clear modulation type is detected, return "Unknown"
         return "Unknown"
+
 
 
     """
@@ -352,12 +322,13 @@ class SignalAnalytics:
         """
         # Find peaks in the signal that are above the threshold
         peaks, _ = signal.find_peaks(self.linear_mg, height=self.threshold)
+        print(peaks)
         return peaks
     
     """
     Analisis de ocupación
     """
-    def determine_bandwidth_utilization(fft_signal, sample_rate, bandwidth_min, bandwidth_max):
+    def determine_bandwidth_utilization(self, bandwidth_min, bandwidth_max):
         """
         Determines how much of a given bandwidth is utilized based on the FFT signal.
 
@@ -370,80 +341,69 @@ class SignalAnalytics:
         Returns:
         - utilization_fraction: float, the fraction of total power used in the given bandwidth.
         """
-        # Length of the FFT signal
-        N = len(fft_signal)
-        
-        # Compute the magnitude (amplitude) of the FFT signal
-        amplitude = np.abs(fft_signal[:N // 2])  # Only positive frequencies
-        xf = np.fft.fftfreq(N, 1 / sample_rate)[:N // 2]  # Corresponding frequencies
         
         # Compute the total power of the FFT signal (power is amplitude squared)
-        total_power = np.sum(amplitude**2)
+        total_power = np.sum(self.linear_mg**2)
         
         # Find indices that correspond to the given bandwidth range
-        indices_in_band = np.where((xf >= bandwidth_min) & (xf <= bandwidth_max))[0]
+        indices_in_band = np.where((self.frecuency >= bandwidth_min) & (self.frecuency <= bandwidth_max))[0]
         
         # Compute the power within the specified bandwidth
-        power_in_band = np.sum(amplitude[indices_in_band]**2)
+        power_in_band = np.sum(self.linear_mg[indices_in_band]**2)
         
         # Calculate the fraction of power utilized in the given bandwidth
         utilization_fraction = power_in_band / total_power if total_power != 0 else 0
-        
+        print(utilization_fraction)
         return utilization_fraction
     
     """
     Crest factor
     """
-    def getCrestFactor(fft_result):
-        """Calculates the crest factor of a radiofrequency signal in the frequency domain.
+    def calculate_crest_factor(self):
+        """
+        Calculates the crest factor of an FFT-transformed signal.
 
-        Args:
-            fft_result: A NumPy array representing the FFT of the RF signal.
+        Parameters:
+        - fft_signal: array-like, the FFT-transformed signal.
 
         Returns:
-            The crest factor of the signal.
+        - crest_factor: float, the crest factor of the signal.
         """
-
-        # Calculate peak amplitude
-        peak_amplitude = np.max(np.abs(fft_result))
-
-        # Calculate RMS amplitude
-        rms_amplitude = np.sqrt(np.mean(np.abs(fft_result)**2))
-
-        # Calculate crest factor
-        crest_factor = peak_amplitude / rms_amplitude
-
+        # Compute the magnitude (amplitude) of the FFT signal
+        amplitude = np.abs(self.linear_mg)
+        
+        # Compute the peak amplitude
+        peak_amplitude = np.max(amplitude)
+        
+        # Compute the RMS (Root Mean Square) amplitude
+        rms_amplitude = np.sqrt(np.mean(amplitude**2))
+        
+        # Compute the crest factor (Peak / RMS)
+        crest_factor = peak_amplitude / rms_amplitude if rms_amplitude != 0 else np.inf
+        print(crest_factor)
         return crest_factor
-            
+    
     """
     PRF
     """
-    def calculate_prf(fft_signal, sample_rate, low_freq_limit=1, high_freq_limit=1000):
+    def calculate_prf(self,  low_freq_limit=400e6, high_freq_limit=480e6):
         """
         Calculates the Pulse Repetition Frequency (PRF) of an FFT-transformed signal.
 
         Parameters:
-        - fft_signal: array-like, the FFT-transformed signal.
         - sample_rate: int, the sample rate of the original time-domain signal (in Hz).
         - low_freq_limit: float, the lower bound of frequency (in Hz) to search for PRF (default=1 Hz).
         - high_freq_limit: float, the upper bound of frequency (in Hz) to search for PRF (default=1000 Hz).
 
         Returns:
         - prf: float, the estimated Pulse Repetition Frequency (PRF) in Hz.
-        """
-        # Length of the FFT signal
-        N = len(fft_signal)
-        
-        # Compute the magnitude (amplitude) of the FFT signal
-        amplitude = np.abs(fft_signal[:N // 2])  # Only consider positive frequencies
-        xf = np.fft.fftfreq(N, 1 / sample_rate)[:N // 2]  # Corresponding frequencies
-        
+        """     
         # Filter out frequencies outside the PRF range of interest (low_freq_limit to high_freq_limit)
-        freq_range_mask = (xf >= low_freq_limit) & (xf <= high_freq_limit)
+        freq_range_mask = (self.frecuency >= low_freq_limit) & (self.frecuency <= high_freq_limit)
         
         # Limit amplitude and frequency to the range of interest
-        filtered_amplitude = amplitude[freq_range_mask]
-        filtered_xf = xf[freq_range_mask]
+        filtered_amplitude = self.linear_mg[freq_range_mask]
+        filtered_xf = self.frecuency[freq_range_mask]
         
         # Detect peaks in the filtered amplitude spectrum
         peaks, _ = find_peaks(filtered_amplitude)
@@ -455,13 +415,13 @@ class SignalAnalytics:
         # The PRF is assumed to be the frequency of the highest peak within the selected range
         dominant_peak_idx = np.argmax(filtered_amplitude[peaks])
         prf = filtered_xf[peaks[dominant_peak_idx]]
-        
+        print(prf)
         return prf
 
     """
     Interference
     """
-    def evaluate_interference_by_channel(fft_signal, sample_rate, channel_centers, channel_bandwidth):
+    def evaluate_interference_by_channel(self, channel_centers, channel_bandwidth):
         """
         Evaluates interference for each channel in an FFT-transformed signal.
 
@@ -475,11 +435,11 @@ class SignalAnalytics:
         - channel_interference: list of tuples, where each tuple contains (center frequency, interference power).
         """
         # Length of the FFT signal
-        N = len(fft_signal)
+        N = len(self.linear_mg)
         
         # Compute the magnitude (amplitude) of the FFT signal
-        amplitude = np.abs(fft_signal[:N // 2])  # Only consider positive frequencies
-        xf = np.fft.fftfreq(N, 1 / sample_rate)[:N // 2]  # Corresponding frequencies
+        amplitude = np.abs(self.linear_mg[:N // 2])  # Only consider positive frequencies
+        xf = np.fft.fftfreq(N, 1 / self.fs)[:N // 2]  # Corresponding frequencies
         
         # List to store interference power for each channel
         channel_interference = []
@@ -498,13 +458,13 @@ class SignalAnalytics:
             
             # Append the result (center frequency, interference power) to the list
             channel_interference.append((center_freq, power_in_channel))
-        
+        print(channel_interference)
         return channel_interference
     
     """
     Frequency drift
     """
-    def detect_main_frequency_changes_from_fft(fft_signal, sample_rate, nperseg=256, noverlap=None, window='hann'):
+    def detect_main_frequency_changes_from_fft(self,nperseg=256, noverlap=None, window='hann'):
         """
         Detects changes in the main frequency of a signal across time using STFT on an FFT-transformed signal.
 
@@ -520,21 +480,21 @@ class SignalAnalytics:
         - main_frequencies: array, the main frequency at each time bin.
         """
         # Compute the Short-Time Fourier Transform (STFT)
-        f, t, Zxx = stft(fft_signal, fs=sample_rate, nperseg=nperseg, noverlap=noverlap, window=window)
+        f, t, Zxx = stft(self.linear_mg, fs=self.fs, nperseg=nperseg, noverlap=noverlap, window=window)
         
         # Get the magnitude of the STFT result (to find the main frequency)
         magnitude = np.abs(Zxx)
         
         # Detect the main frequency at each time bin (find the frequency with the highest magnitude)
         main_frequencies = f[np.argmax(magnitude, axis=0)]
-        
+        print(main_frequencies)
         return t, main_frequencies
         
 
     """
     Tiempo ocupación
     """
-    def detect_signal_presence_in_spectrum(fft_signal, sample_rate, threshold=0.01, nperseg=256, noverlap=None, window='hann'):
+    def detect_signal_presence_in_spectrum(self, threshold=0.01, nperseg=256, noverlap=None, window='hann'):
         """
         Detects how much time the signal is present in the spectrum using STFT.
 
@@ -552,7 +512,7 @@ class SignalAnalytics:
         - presence_fraction: float, fraction of time the signal is present in the spectrum.
         """
         # Compute the Short-Time Fourier Transform (STFT)
-        f, t, Zxx = stft(fft_signal, fs=sample_rate, nperseg=nperseg, noverlap=noverlap, window=window)
+        f, t, Zxx = stft(self.linear_mg, fs=self.fs, nperseg=nperseg, noverlap=noverlap, window=window)
         
         # Compute the magnitude of the STFT (to detect presence)
         magnitude = np.abs(Zxx)
@@ -569,44 +529,55 @@ class SignalAnalytics:
         
         # Fraction of the time the signal is present
         presence_fraction = active_time / total_time if total_time > 0 else 0
-        
+        print(presence_fraction)
         return active_time, total_time, presence_fraction
     
     """
     Espectro temporal
     """
 
-    def waterfall_display(fft_signal, sample_rate, nperseg=256, noverlap=None, window='hann', cmap='viridis'):
+    def waterfall_display(self, nperseg=256, noverlap=None, window='hann', cmap='viridis'):
         """
-        Generates a waterfall display of an FFT signal using STFT.
+        Generates a waterfall display (spectrogram) of the signal using STFT and returns a Plotly figure.
 
         Parameters:
-        - fft_signal: array-like, the FFT-transformed signal.
-        - sample_rate: int, the sample rate of the original time-domain signal (in Hz).
         - nperseg: int, length of each segment for the STFT (default=256).
         - noverlap: int, number of points to overlap between segments (default=None, meaning nperseg // 2).
         - window: str or tuple, desired window to use (default is 'hann').
         - cmap: str, the colormap to use for the display (default is 'viridis').
 
         Returns:
-        - None, displays the waterfall plot.
+        - fig: plotly.graph_objs._figure.Figure
+            Plotly figure of the spectrogram.
         """
-        # Compute the Short-Time Fourier Transform (STFT)
-        f, t, Zxx = stft(fft_signal, fs=sample_rate, nperseg=nperseg, noverlap=noverlap, window=window)
-        
-        # Compute the magnitude of the STFT
-        magnitude = np.abs(Zxx)
-        
-        # Plot the waterfall display using a 2D colormap
-        plt.figure(figsize=(10, 6))
-        plt.pcolormesh(t, f, magnitude, shading='gouraud', cmap=cmap)
-        plt.title('Waterfall Display of FFT Signal')
-        plt.ylabel('Frequency [Hz]')
-        plt.xlabel('Time [s]')
-        plt.colorbar(label='Magnitude')
-        plt.show()
+        import plotly.graph_objects as go
 
-    def calculate_power_in_bandwidth(fft_signal, sample_rate, bandwidth_min, bandwidth_max):
+        # Compute the Short-Time Fourier Transform (STFT)
+        f, t, Zxx = stft(self.linear_mg, fs=self.fs, nperseg=nperseg, noverlap=noverlap, window=window)
+        
+        # Compute the magnitude of the STFT in dB
+        magnitude = np.abs(Zxx)
+        magnitude_db = 20 * np.log10(magnitude + 1e-6)  # Add a small value to avoid log(0)
+        
+        # Create the figure using Plotly
+        fig = go.Figure(data=go.Heatmap(
+            x=t,
+            y=f,
+            z=magnitude_db,
+            colorscale=cmap,
+            colorbar=dict(title='Magnitud (dB)')
+        ))
+        
+        fig.update_layout(
+            title='Espectrograma de la Señal',
+            xaxis_title='Tiempo (s)',
+            yaxis_title='Frecuencia (Hz)'
+        )
+        
+        return fig
+    
+
+    def calculate_power_in_bandwidth(self, bandwidth_min, bandwidth_max):
         """
         Calculates the power of an FFT signal within a specific bandwidth channel.
 
@@ -620,18 +591,18 @@ class SignalAnalytics:
         - power_in_band: float, the total power within the specified bandwidth.
         """
         # Length of the FFT signal
-        N = len(fft_signal)
+        N = len(self.linear_mg)
         
         # Compute the magnitude (amplitude) of the FFT signal
-        amplitude = np.abs(fft_signal[:N // 2])  # Only positive frequencies
-        xf = np.fft.fftfreq(N, 1 / sample_rate)[:N // 2]  # Corresponding positive frequencies
+        amplitude = np.abs(self.linear_mg[:N // 2])  # Only positive frequencies
+        xf = np.fft.fftfreq(N, 1 / self.fs)[:N // 2]  # Corresponding positive frequencies
         
         # Find the indices corresponding to the frequency range within the specified bandwidth
         indices_in_band = np.where((xf >= bandwidth_min) & (xf <= bandwidth_max))[0]
         
         # Calculate the power (amplitude squared) within the specified bandwidth
         power_in_band = np.sum(amplitude[indices_in_band]**2)
-        
+        print(power_in_band)
         return power_in_band
 
 
@@ -685,7 +656,7 @@ class SignalAnalytics:
         plt.grid()
         plt.title('Signal Plot')
         plt.xlabel('Time')
-        plt.ylabel('Amplitude')
+        plt.ylabel('Magnitude')
         plt.show()
     
     def plot_2(self):
@@ -726,7 +697,7 @@ class SignalAnalytics:
         plt.grid()
         plt.title('Signal Plot')
         plt.xlabel('Time')
-        plt.ylabel('Amplitude')
+        plt.ylabel('Magnitude')
         plt.show()
 
     def power():
@@ -770,20 +741,51 @@ class SignalAnalytics:
         plt.show()
 
 
-if __name__ == "__main__":
-   signal_analitics = SignalAnalytics("DATA_1.csv", 0.1)
-   signal_analitics.suavizar(window_length=11, polyorder=2)
-   signal_analitics.interpolar()
-   signal_analitics.plot_3()
-   print("Frecuencia central: ") # Hz 
-   signal_analitics.frecuenciaCentral()
-   print("Ancho de banda: ") # Hz 
-   signal_analitics.anchoDeBanda(threshold_db=-3)
-   print("Potencia de la señal: ") # watts
-   signal_analitics.potencia()
-   print("SNR ") # dB 
-   signal_analitics.calcular_snr_sin_ruido()
-   print("Frecuencias de spurias")  # Hz
-   signal_analitics.frecuenciasSpuria()
+# if __name__ == "__main__":
+#    signal_analitics = SignalAnalytics("recurso1.csv", 10**-4)
+#    signal_analitics.suavizar(window_length=11, polyorder=2)
+#    signal_analitics.interpolar()
+#    signal_analitics.plot_3()
+#    print("Frecuencia central: ") # Hz 
+#    signal_analitics.frecuenciaCentral()
+#    fc = signal_analitics.frecuenciaCentral()
+#    print("Ancho de banda: ") # Hz 
+#    signal_analitics.anchoDeBanda(threshold_db=-3)
+#    BW = signal_analitics.anchoDeBanda(threshold_db=-3)
+#    print("Potencia de la señal: ") # watts
+#    signal_analitics.potencia()
+#    print("Potencia de R")
+#    signal_analitics.potencia_frecuencia()
+#    print("SNR ") # dB 
+#    signal_analitics.calcular_snr_sin_ruido()
+#    print("Frecuencias de spurias")  # Hz
+#    signal_analitics.frecuenciasSpuria()
+#    print("Frecuencias armónicas")
+#    signal_analitics.detect_harmonics()
+#    print(signal_analitics.detect_modulation_from_frequency_series())
+#    print("Peaks")
+#    signal_analitics.detect_peaks()
+#    print("Ancho de banda ocupado")
+#    MF = (float(fc) - float(BW[0]/2))
+#    MAF = (float(fc) + float(BW[0]/2))
+#    signal_analitics.determine_bandwidth_utilization(MF , MAF)
+#    print("crest factor")
+#    signal_analitics.calculate_crest_factor()
+#    print("pfr")
+#    signal_analitics.calculate_prf()
+#    print("interferencia")
+#    signal_analitics.evaluate_interference_by_channel([fc - BW[0]/2,fc, fc + BW[0]/2], BW[0])
+#    # diferencia dos csv's
+#    print("presence")
+#    signal_analitics.detect_signal_presence_in_spectrum()
+#    print("drift")
+#    signal_analitics.detect_main_frequency_changes_from_fft()
+
+#    # interferencias
+#    print("waterfall")
+#    signal_analitics.waterfall_display()
+#    signal_analitics.calculate_power_in_bandwidth(MF , MAF)
+   
+   
    
    
