@@ -7,8 +7,7 @@ layout = dbc.Container([
     # Logos
     dbc.Row(
         [
-            dbc.Col(html.Img(src="/assets/logo-fac.png", height="200px"), width=6, className="d-flex justify-content-center"),
-            dbc.Col(html.Img(src="/assets/logo-uniandes.png", height="100px"), width=6, className="d-flex justify-content-center"),
+            dbc.Col(html.Img(src="/assets/logo-siemens.png", height="100px"), width=6, className="d-flex justify-content-center")
         ],
         justify="center",
         align="center",
@@ -18,7 +17,7 @@ layout = dbc.Container([
     # Título
     dbc.Row(
         dbc.Col(
-            html.H2("Bienvenido al Análisis de Señales de RF"),
+            html.H2("Bienvenido al Análisis de Requerimientos técnicos"),
             width={"size": 8, "offset": 2},
             className="text-center",
         ),

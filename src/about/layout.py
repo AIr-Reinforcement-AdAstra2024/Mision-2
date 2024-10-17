@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 
 layout = dbc.Container(
     [
-        html.H2("Acerca de Air Reinforcement"),
+        html.H2("Acerca del proyecto de T.S."),
         html.Hr(),
         dbc.Row(
             [
@@ -14,10 +14,10 @@ layout = dbc.Container(
                         html.H4("Motivación del Proyecto"),
                         html.P(
                             """
-                            Las misiones satelitales de observación de la Tierra son cruciales para el monitoreo ambiental, la gestión de desastres naturales y la predicción meteorológica. Estos satélites transmiten datos a través de enlaces de radiofrecuencia (RF) que pueden sufrir interferencias y atenuación, afectando la calidad de la señal y la integridad de los datos. Una caracterización detallada de las señales RF es esencial para identificar y mitigar estos problemas, permitiendo optimizar la eficiencia espectral y asegurar transmisiones de datos fiables y de alta calidad desde los satélites hasta las estaciones terrestres.
+                            Concurso abril
                             """
                         ),
-                        html.H4("Tecnologías Utilizadas"),
+                        html.H4("Tecnologias usadas"),
                         html.Ul(
                             [
                                 html.Li("Python 3"),
@@ -38,11 +38,8 @@ layout = dbc.Container(
                                 html.H4("Miembros del Equipo"),
                                 html.Ul(
                                     [
-                                        html.Li("Daniel Perea"),
-                                        html.Li("Daniel Vanegas"),
-                                        html.Li("Sergio Oliveros"),
-                                        html.Li("Haider Fonseca"),
-                                        html.Li("Sebastian Urrea"),
+                                        html.Li("Nicolay"),
+                                        html.Li("Daniel Vanegas") 
                                         # Agrega más miembros según corresponda
                                     ]
                                 ),
@@ -64,7 +61,7 @@ layout = dbc.Container(
                         ),
                         html.Ul(
                             [
-                                html.Li("GitHub: https://github.com/AIr-Reinforcement-AdAstra2024"),
+                                html.Li("GitHub: Azure DevOps de"),
                                 # Agrega más métodos de contacto si es necesario
                             ]
                         ),

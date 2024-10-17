@@ -19,6 +19,8 @@ import interferences.callbacks
 import reports.callbacks
 import about.callbacks
 
+
+
 # Definir la barra de navegación
 navbar = dbc.Navbar(
     dbc.Container(
@@ -26,7 +28,7 @@ navbar = dbc.Navbar(
             # Logos
             dbc.Row(
                 [
-                    dbc.Col(dbc.NavbarBrand("Análisis de Señales de RF", className="ms-2")),
+                    dbc.Col(dbc.NavbarBrand("Análisis de Requerimientos de S.T", className="ms-2")),
                 ],
                 align="center",
                 className="g-0",
@@ -35,7 +37,7 @@ navbar = dbc.Navbar(
             dbc.Nav(
                 [
                     dbc.NavLink("Inicio", href="/", active="exact"),
-                    dbc.NavLink("Análisis de Señal", href="/signal-analysis", active="exact"),
+                    dbc.NavLink("Análisis", href="/signal-analysis", active="exact"),
                     dbc.NavLink("Interferencias", href="/interferences", active="exact"),
                     dbc.NavLink("Reportes", href="/reports", active="exact"),
                     dbc.NavLink("Acerca de", href="/about", active="exact"),
@@ -44,17 +46,20 @@ navbar = dbc.Navbar(
             ),
         ]
     ),
-    color="dark",
+    className="navbar-custom", 
     dark=True,
 )
 
 # Definir el layout de la aplicación
-app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),
-    dcc.Store(id='stored-data', storage_type='session'),  # Almacenar datos en la sesión
-    navbar,
-    html.Div(id='page-content')
-])
+app.layout = html.Div(
+    style={'backgroundColor': '#ffffff'},  # Cambiar el color de fondo aquí
+    children=[
+        dcc.Location(id='url', refresh=False),
+        dcc.Store(id='stored-data', storage_type='session'),  # Almacenar datos en la sesión
+        navbar,  # Navbar que ya definiste
+        html.Div(id='page-content')
+    ]
+)
 
 # Callback para actualizar el contenido de la página según la URL
 @app.callback(Output('page-content', 'children'),
@@ -72,12 +77,13 @@ def display_page(pathname):
         return about_layout
     else:
         return dbc.Container(
-            [
+            [                                                                                                                            
                 html.H1("404: Página no encontrada", className="text-danger"),
                 html.Hr(),
                 html.P(f"La ruta {pathname} no existe."),
             ],
             className="py-3",
+            style={'backgroundColor': '#f0f8ff'}
         )
 
 
